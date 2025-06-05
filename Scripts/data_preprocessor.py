@@ -15,7 +15,16 @@ def impute_missing_values(data, strategy='mean'):
     :return: pandas DataFrame
     """
     # TODO: Fill missing values based on the specified strategy
-    pass
+    for column in data.select_dtypes(include=[np.number]).columns:
+        if strategy == 'mean': 
+            data[column].fillna(data[column].mean(), inplace = True)
+        elif strategy == 'median': 
+            data[column].fillna(data[column].median(), inplace = True)
+        elif strategy == 'mode': 
+            data[column].fillna(data[column].mode()[0], inplace = True)
+        else: 
+            raise ValueError("Invalid strategy")
+    return data 
 
 # 2. Remove Duplicates
 def remove_duplicates(data):
@@ -25,7 +34,12 @@ def remove_duplicates(data):
     :return: pandas DataFrame
     """
     # TODO: Remove duplicate rows
-    pass
+    original_shape = data.shape
+    data = data.drop_duplicates()
+    if data.shape == original_shape:
+        print("No duplicates removed")
+
+    return data
 
 # 3. Normalize Numerical Data
 def normalize_data(data,method='minmax'):
@@ -34,7 +48,17 @@ def normalize_data(data,method='minmax'):
     :param method: str, normalization method ('minmax' (default) or 'standard')
     """
     # TODO: Normalize numerical data using Min-Max or Standard scaling
-    pass
+    for column in data.select_dtypes(include=[np.number]).columns:
+        if method == 'minmax': 
+            scaler = MinMaxScaler()
+        elif method == 'standard': 
+            scaler = StandardScaler()
+        else: 
+            raise ValueError("Invalid Method")
+
+        data[column] = scaler.fit_transform(data[[column]])
+    
+    return data
 
 # 4. Remove Redundant Features   
 def remove_redundant_features(data, threshold=0.9):
@@ -44,8 +68,18 @@ def remove_redundant_features(data, threshold=0.9):
     :return: pandas DataFrame
     """
     # TODO: Remove redundant features based on the correlation threshold (HINT: you can use the corr() method)
-    pass
-
+    
+    float_cols = data.select_dtypes(include=[np.float64])   #get float columns 
+    
+    #get correlation matrix, check upper triangle for values above threshold
+    corr_matrix = float_cols.corr()
+    upper = corr_matrix.where(np.triu(np.ones(corr_matrix.shape), k=1).astype(bool))
+    to_drop = [column for column in upper.columns if any(upper[column] > threshold)]
+    
+    data.drop(to_drop, axis=1, inplace=True) #drop redundant data 
+    return data
+    
+    
 # ---------------------------------------------------
 
 def simple_model(input_data, split_data=True, scale_data=False, print_report=False):
